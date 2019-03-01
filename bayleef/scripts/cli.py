@@ -11,6 +11,7 @@ from shutil import copyfile
 from threading import Thread
 
 import re
+import yaml
 import fnmatch
 import click
 from sqlalchemy import create_engine
@@ -18,7 +19,7 @@ from sqlalchemy.exc import IntegrityError
 
 import gdal
 import wget
-from plio.io.io_gdal import GeoDataset
+# from plio.io.io_gdal import GeoDataset
 from pathlib import Path
 
 from .. import api
@@ -28,7 +29,6 @@ from .. import sql
 from .. import pysbatch
 from bayleef import config
 from bayleef import config_file
-
 
 from collections import OrderedDict
 from sys import stdin
@@ -452,18 +452,19 @@ def batch_jobs(jobs, log=".", njobs=-1,  **sbatch_kwargs):
         logger.info("Running {} jobs for {}".format(len(commands), step))
 
         for i, command in enumerate(commands):
-            job_name = 'bayleef_{}_{}'.format("".join(step.split()), i)
-            joblist.append(job_name)
-            log_file = os.path.join(log, job_name+'.log')
-
-            logger.info("{} {}/{}".format(step, i+1, len(commands)))
-            logger.info("Dispatching {}".format(command))
-            logger.info('Jobname: {}'.format(job_name))
-            logger.info('Log File: {}'.format(log_file))
-            out = pysbatch.sbatch(wrap=command, job_name=job_name, log=log_file, **sbatch_kwargs)
-            logger.info(out.lstrip().rstrip())
-            if njobs != -1:
-                pysbatch.limit_jobs(njobs)
+            print(command)
+            # job_name = 'bayleef_{}_{}'.format("".join(step.split()), i)
+            # joblist.append(job_name)
+            # log_file = os.path.join(log, job_name+'.log')
+            #
+            # logger.info("{} {}/{}".format(step, i+1, len(commands)))
+            # logger.info("Dispatching {}".format(command))
+            # logger.info('Jobname: {}'.format(job_name))
+            # logger.info('Log File: {}'.format(log_file))
+            # out = pysbatch.sbatch(wrap=command, job_name=job_name, log=log_file, **sbatch_kwargs)
+            # logger.info(out.lstrip().rstrip())
+            # if njobs != -1:
+            #     pysbatch.limit_jobs(njobs)
 
         logger.info("Waiting for jobs in {} to complete.".format(step))
         pysbatch.wait_for_jobs(joblist)
@@ -525,13 +526,13 @@ def agility(job_file, add_option, njobs, time, mem, log, **options):
 
     if is_pipe:
         try:
-            jobs = json.loads(pipestr, object_pairs_hook=OrderedDict)
+            jobs = yaml.load(pipestr, yaml.SafeLoader)
         except Exception as e:
             logger.error("Not Valid Json\n{}".format(pipestr))
             exit(1)
     else:
         try:
-            jobs = json.load(open(job_file), object_pairs_hook=OrderedDict)
+            jobs = yaml.load(open(job_file), yaml.SafeLoader)
         except Exception as e:
             logger.error("Cannot open {} for reading.".format(job_file))
             exit(1)
